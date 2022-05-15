@@ -87,12 +87,14 @@ module.exports = {
                     if (!data.transcript.text) return;
                     let text = data.transcript.text;
                     let user = data.user;
-                    voiceParser = new VoiceParser(["current", "now playing", "playing", "queue", "cue", "q", "que", "play", "played", "pause", "paws", "paused", "resume", "resumed", "skip", "skipped", "shuffle", "shuffled", "leave", "disconnect", "dc", "stop", "lyrics", "lyric","undo","remove"]);
+                    voiceParser = new VoiceParser(["current", "currently", "now", "now playing", "playing", "queue", "cue", "q", "que", "play", "plays", "place", "played", "pause", "paws", "paused", "resume", "resumed", "skip", "skipped", "shuffle", "shuffled", "leave", "disconnect", "dc", "stop", "lyrics", "lyric","undo","remove"]);
                     let parsed = voiceParser.parse(text);
                     if(parsed){
                         switch (parsed.toString().split(" ")[0]) {
                             case 'current':
+                            case 'currently':
                             case 'now playing':
+                            case 'now':
                             case 'playing':
                                 //HERE
                                 const bar = require('stylish-text');
@@ -132,6 +134,8 @@ module.exports = {
                                  interaction.channel.send({embeds: [embed]});
                                 break;
                             case 'played':
+                            case 'plays':
+                            case 'place':
                             case 'play':
                                 let song = {};
                                 if(parsed.toString().split(" ").length == 1){
@@ -410,6 +414,22 @@ class VoiceParser {
             string = string.trim();
             if (!this.possible.includes(string)) return false; 
             output = output.replace(/\./g, "").toLowerCase().replace("movie", "").trim();
+            break;
+          } else if (check[i] == "music"){
+            checked = true;
+            string = string.toLowerCase().replace("music", "").trim();
+            if (string.includes(" ")) string = string.split(" ")[0];
+            string = string.trim();
+            if (!this.possible.includes(string)) return false; 
+            output = output.replace(/\./g, "").toLowerCase().replace("music", "").trim();
+            break;
+          } else if (check[i] == "review"){
+            checked = true;
+            string = string.toLowerCase().replace("review", "").trim();
+            if (string.includes(" ")) string = string.split(" ")[0];
+            string = string.trim();
+            if (!this.possible.includes(string)) return false; 
+            output = output.replace(/\./g, "").toLowerCase().replace("review", "").trim();
             break;
           }
       }
