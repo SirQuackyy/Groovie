@@ -14,6 +14,8 @@ const { mongoConnection } = require("mongoose");
 const pagination = require('@acegoal07/discordjs-pagination');
 const { MessageActionRow } = require("discord.js");
 const { MessageButton } = require("discord.js");
+const { channel } = require("diagnostics_channel");
+const { dateEq } = require("@sapphire/shapeshift");
 
 const player = createAudioPlayer();
 
@@ -87,13 +89,47 @@ module.exports = {
                     let user = data.user;
                     voiceParser = new VoiceParser(["current", "now playing", "playing", "queue", "cue", "q", "que", "play", "played", "pause", "paws", "paused", "resume", "resumed", "skip", "skipped", "shuffle", "shuffled", "leave", "disconnect", "dc", "stop", "lyrics", "lyric","undo","remove"]);
                     let parsed = voiceParser.parse(text);
-                    console.log(parsed);
                     if(parsed){
                         switch (parsed.toString().split(" ")[0]) {
                             case 'current':
                             case 'now playing':
                             case 'playing':
                                 //HERE
+                                const bar = require('stylish-text');
+
+                                    function toReadableTime(given){
+                                         var time = given;
+                                         var minutes = "0" + Math.floor(time / 60);
+                                         var seconds = "0" + (time - minutes * 60);
+                                         return minutes.substr(-2) + ":" + seconds.substr(-2);
+                                     }
+
+                                 var actualTimeTwo = server_queue.songs[0].duration.split(':');
+                                 var timeinmilliTwo = 0;
+                                 if(hhmmss(server_queue.songs[0].duration)){
+                                     timeinmilliTwo = ((+actualTimeTwo[0]) * 60 * 60 + (+(actualTimeTwo[1])) * 60 + (+actualTimeTwo[2])) * 1000;
+                                 } else {
+                                     timeinmilliTwo = ((+(actualTimeTwo[0])) * 60 + (+(actualTimeTwo[1]))) * 1000;
+                                 }
+                                 const end = timeinmilliTwo/1000 //video in seconds
+
+                                 const current = Math.floor((timeinmilliTwo - (startTime - Date.now())) / 1000) //ms --> seconds
+
+                                 const value = (current * (100 / end) / 5)
+
+                                 bar.default.full = "█";
+                                 bar.default.empty = " - ";
+                                 bar.default.start = "";
+                                 bar.default.end = "";
+                                 bar.default.text = "{bar}";
+                                    
+                                 const embed = new MessageEmbed()
+                                 .setColor('#0099ff')
+                                 .setTitle('Now Playing')
+                                 .setURL(`${server_queue.songs[0].url}`)
+                                 .setDescription(`${server_queue.songs[0].title}\n${toReadableTime(current)} - [${bar.progress(20, value)}] - ${toReadableTime(end)}`);
+                                 
+                                 interaction.channel.send({embeds: [embed]});
                                 break;
                             case 'played':
                             case 'play':
@@ -103,7 +139,6 @@ module.exports = {
                                 }
                                 if(parsed.toString().split(" ").length > 1){
                                     let query = parsed.replace("play", "").trim();
-                                    console.log(query);
                                     const video_finder = async (equery) => {
                                         const videoResult = await yts(equery);
                                         return (videoResult.videos.length > 1) ? videoResult.videos[0] : null;
@@ -119,7 +154,6 @@ module.exports = {
                                             return console.log("Error L rip bozo nerd causal no vid");
                                         }
                                         if (!server_queue){
-                                            console.log(server_queue);
                                             const queue_constructor = {
                                                 voice_channel: voice_channel,
                                                 text_channel: interaction.channel,
@@ -139,9 +173,7 @@ module.exports = {
                                             }
                                             server_queue = queue.get(interaction.guild.id);
                                         } else{
-                                            console.log(server_queue.songs);
                                             server_queue.songs.push(song);
-                                            console.log(server_queue.songs);
                                             return interaction.channel.send(`👍 **${song.title}** added to queue!`);
                                         }
                                     });
@@ -154,6 +186,7 @@ module.exports = {
                                 if(!server_queue){
                                     break;
                                 } else {
+                                try{
                                     interaction.channel.send("Fetching Queue").then((message) => {
                                         var queues = "";
                                         var pages = [];
@@ -169,7 +202,7 @@ module.exports = {
                                                 } else {
                                                     embed
                                                     .setColor('#58D68D')
-                                                    .setDescription(`**Now Playing**\n**${pos + 1}.** [${server_queue.songs[pos].title}](${server_queue.songs[pos].url})` + ' **[' + `${msToHMS(remaining)} remaining` + `]**\n*Requested by [${server_queue.songs[pos].requested}]*\n\n**Queue**\n${queues}`);
+                                                    .setDescription(`**Now Playing**\n**1.** [${server_queue.songs[0].title}](${server_queue.songs[0].url})` + ' **[' + `${msToHMS(remaining)} remaining` + `]**\n*Requested by [${server_queue.songs[0].requested}]*\n\n**Queue**\n${queues}`);
                                                 }
                                                 pages.push(embed);
                                                 queues = "";
@@ -184,7 +217,7 @@ module.exports = {
                                             } else {
                                                 embed
                                                 .setColor('#58D68D')
-                                                .setDescription(`**Now Playing**\n**${pos + 1}.** [${server_queue.songs[pos].title}](${server_queue.songs[pos].url})` + ' **[' + `${msToHMS(remaining)} remaining` + `]**\n*Requested by [${server_queue.songs[pos].requested}]*\n\n**Queue**\n${queues}`);
+                                                .setDescription(`**Now Playing**\n**1.** [${server_queue.songs[0].title}](${server_queue.songs[0].url})` + ' **[' + `${msToHMS(remaining)} remaining` + `]**\n*Requested by [${server_queue.songs[0].requested}]*\n\n**Queue**\n${queues}`);
                                             }
                                                 pages.push(embed);
                                         }
@@ -203,6 +236,10 @@ module.exports = {
                                             const timeout = 30000;
                                             pagination({message, pageList:pages, buttonList, timeout:timeout})
                                     });
+                                } catch (err){
+                                    interaction.channel.send("There was an error, please try again");
+                                    throw err;
+                                }
                                 }
                                 break;
                             case 'skipped':
@@ -322,14 +359,14 @@ module.exports = {
                                 break;
                             case 'undo':
                             case 'remove':
-                                let e = server_queue.songs[server_queue.songs.length];
+                                let e = server_queue.songs[server_queue.songs.length - 1];
                                 if (server_queue.songs.length > 1)
                                    {server_queue.songs.pop();}
                                 interaction.channel.send(`❌ Removed [${e}] from the queue.`)
                                 break;
                             default:
                                 break;
-                        }   
+                        }
                     }
                 });
               });
@@ -351,31 +388,28 @@ class VoiceParser {
       let checked = false;
       for(let i = 0; i < check.length; i++){
           if(check[i] == "groovy"){
-            checked = true; 
-            let stringAfter = string.substring(str.indexOf('groovy') + 1);
+            checked = true;
             string = string.toLowerCase().replace("groovy", "").trim();
-            if (stringAfter.includes(" ")) stringAfter = stringAfter.split(" ")[0];
-            stringAfter = stringAfter.trim();
-            if (!this.possible.includes(stringAfter)) return false; 
-            output = output.replace(/\./g, "").toLowerCase().substring(str.indexOf('groovy') + 1).trim();
+            if (string.includes(" ")) string = string.split(" ")[0];
+            string = string.trim();
+            if (!this.possible.includes(string)) return false; 
+            output = output.replace(/\./g, "").toLowerCase().replace("groovy", "").trim();
             break;
           } else if (check[i] == "ruby"){
-            checked = true; 
-            let stringAfter = string.substring(str.indexOf('ruby') + 1);
+            checked = true;
             string = string.toLowerCase().replace("ruby", "").trim();
-            if (stringAfter.includes(" ")) stringAfter = stringAfter.split(" ")[0];
-            stringAfter = stringAfter.trim();
-            if (!this.possible.includes(stringAfter)) return false; 
-            output = output.replace(/\./g, "").toLowerCase().substring(str.indexOf('ruby') + 1).trim();
+            if (string.includes(" ")) string = string.split(" ")[0];
+            string = string.trim();
+            if (!this.possible.includes(string)) return false; 
+            output = output.replace(/\./g, "").toLowerCase().replace("ruby", "").trim();
             break;
           } else if (check[i] == "movie"){
-            checked = true; 
-            let stringAfter = string.substring(str.indexOf('movie') + 1);
+            checked = true;
             string = string.toLowerCase().replace("movie", "").trim();
-            if (stringAfter.includes(" ")) stringAfter = stringAfter.split(" ")[0];
-            stringAfter = stringAfter.trim();
-            if (!this.possible.includes(stringAfter)) return false; 
-            output = output.replace(/\./g, "").toLowerCase().substring(str.indexOf('movie') + 1).trim();
+            if (string.includes(" ")) string = string.split(" ")[0];
+            string = string.trim();
+            if (!this.possible.includes(string)) return false; 
+            output = output.replace(/\./g, "").toLowerCase().replace("movie", "").trim();
             break;
           }
       }
