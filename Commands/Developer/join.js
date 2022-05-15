@@ -4,6 +4,7 @@ const { AudioPlayerStatus, joinVoiceChannel, getVoiceConnection, createAudioPlay
 const events = require('events');
 const queue = new Map();
 const ytdl = require("ytdl-core");
+const play = require('play-dl')
 const yts = require("yt-search");
 const fs = require('fs');
 
@@ -39,12 +40,12 @@ const video_player = async (guild, song, interaction) => {
         queue.delete(guild.id);
         return interaction.channel.send("No more songs in the queue");
     }
-    const stream = ytdl(song.url, { filter: 'audioonly', quality: "highest"});
+    const stream = await play.stream(song.url);
 
     let voiceConnection = getVoiceConnection(guild.id);
 
     voiceConnection.subscribe(player);
-    let resource = createAudioResource(stream);
+    const resource = createAudioResource(stream.stream, { inputType: stream.type});
     dispatcher = player.play(resource);
     player.on(AudioPlayerStatus.Idle, () => {
         pos += 1;
@@ -52,6 +53,7 @@ const video_player = async (guild, song, interaction) => {
         server_queue.songs.shift();
         if(server_queue.songs.length == 0){
             pos = 0;
+            server_queue = null;
             return interaction.channel.send("No more songs in queue");
         }
         video_player(guild, server_queue.songs[0], interaction);
@@ -146,16 +148,16 @@ module.exports = {
                                 if(parsed.toString().split(" ").length > 1){
                                     let query = parsed.replace("play", "").trim();
                                     const video_finder = async (equery) => {
-                                        const videoResult = await yts(equery);
-                                        return (videoResult.videos.length > 1) ? videoResult.videos[0] : null;
+                                        const videoResult = await play.search(equery, {limit:5});
+                                        return (videoResult.length > 1) ? videoResult[0] : null;
                                     }
         
                                     video_finder(query).then((video) => {
                                         if (video){
-                                            if(video.type === "live"){
+                                            if(video.live){
                                                 return interaction.channel.send("Can not play live streams");
                                             }
-                                            song = {title: video.title, url: video.url, duration: video.duration.timestamp, requested: interaction.client.users.cache.get(userId)};
+                                            song = {title: video.title, url: video.url, duration: video.durationRaw, requested: user};
                                         } else {
                                             return console.log("Error L rip bozo nerd causal no vid");
                                         }
