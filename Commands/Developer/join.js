@@ -3,10 +3,7 @@ const Transcriber = require("discord-speech-to-text");
 const { AudioPlayerStatus, joinVoiceChannel, getVoiceConnection, createAudioPlayer, createAudioResource, NoSubscriberBehavior, VoiceConnectionStatus, entersState } = require('@discordjs/voice');
 const events = require('events');
 const queue = new Map();
-const ytdl = require("ytdl-core");
 const play = require('play-dl')
-const yts = require("yt-search");
-const fs = require('fs');
 
 const Genius = require("genius-lyrics");
 const GClient = new Genius.Client(process.env.GENIUS_KEY);
