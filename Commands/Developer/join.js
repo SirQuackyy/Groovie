@@ -366,7 +366,7 @@ module.exports = {
                                 let e = server_queue.songs[server_queue.songs.length - 1];
                                 if (server_queue.songs.length > 1)
                                    {server_queue.songs.pop();}
-                                interaction.channel.send(`❌ Removed [${e}] from the queue.`)
+                                interaction.channel.send(`❌ Removed [${e.title}] from the queue.`)
                                 break;
                             default:
                                 break;
