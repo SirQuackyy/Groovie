@@ -14,8 +14,6 @@ const { mongoConnection } = require("mongoose");
 const pagination = require('@acegoal07/discordjs-pagination');
 const { MessageActionRow } = require("discord.js");
 const { MessageButton } = require("discord.js");
-const { channel } = require("diagnostics_channel");
-const { dateEq } = require("@sapphire/shapeshift");
 
 const player = createAudioPlayer();
 
@@ -25,7 +23,7 @@ const firstSong = null;
 
 var pos = 0;
 
-const video_player = async (guild, song) => {
+const video_player = async (guild, song, interaction) => {
     server_queue = queue.get(guild.id);
     var actualTime = song.duration.split(':');
     var timeinmilli = 0;
@@ -39,7 +37,7 @@ const video_player = async (guild, song) => {
     //If no song is left in the server queue. Leave the voice channel and delete the key and value pair from the global queue.
     if (!song) {
         queue.delete(guild.id);
-        return;
+        return interaction.channel.send("No more songs in the queue");
     }
     const stream = ytdl(song.url, { filter: 'audioonly', quality: "highest"});
 
@@ -52,11 +50,11 @@ const video_player = async (guild, song) => {
         pos += 1;
         startTime = 0;
         server_queue.songs.shift();
-        if(server_queue.songs == 0){
+        if(server_queue.songs.length == 0){
             pos = 0;
-            return interaction.channel.send("No more songs in the queue");
+            return interaction.channel.send("No more songs in queue");
         }
-        video_player(guild, server_queue.songs[0]);
+        video_player(guild, server_queue.songs[0], interaction);
     }); 
     await server_queue.text_channel.send(`🎶 Now playing **${song.title}**`);
 }
@@ -97,41 +95,45 @@ module.exports = {
                             case 'now':
                             case 'playing':
                                 //HERE
-                                const bar = require('stylish-text');
+                                if(!server_queue){
+                                    return interaction.channel.send("No songs playing");
+                                } else {
+                                    const bar = require('stylish-text');
 
                                     function toReadableTime(given){
-                                         var time = given;
-                                         var minutes = "0" + Math.floor(time / 60);
-                                         var seconds = "0" + (time - minutes * 60);
-                                         return minutes.substr(-2) + ":" + seconds.substr(-2);
-                                     }
+                                        var time = given;
+                                        var minutes = "0" + Math.floor(time / 60);
+                                        var seconds = "0" + (time - minutes * 60);
+                                        return minutes.substr(-2) + ":" + seconds.substr(-2);
+                                    }
 
-                                 var actualTimeTwo = server_queue.songs[0].duration.split(':');
-                                 var timeinmilliTwo = 0;
-                                 if(hhmmss(server_queue.songs[0].duration)){
-                                     timeinmilliTwo = ((+actualTimeTwo[0]) * 60 * 60 + (+(actualTimeTwo[1])) * 60 + (+actualTimeTwo[2])) * 1000;
-                                 } else {
-                                     timeinmilliTwo = ((+(actualTimeTwo[0])) * 60 + (+(actualTimeTwo[1]))) * 1000;
-                                 }
-                                 const end = timeinmilliTwo/1000 //video in seconds
+                                var actualTimeTwo = server_queue.songs[0].duration.split(':');
+                                var timeinmilliTwo = 0;
+                                if(hhmmss(server_queue.songs[0].duration)){
+                                    timeinmilliTwo = ((+actualTimeTwo[0]) * 60 * 60 + (+(actualTimeTwo[1])) * 60 + (+actualTimeTwo[2])) * 1000;
+                                } else {
+                                    timeinmilliTwo = ((+(actualTimeTwo[0])) * 60 + (+(actualTimeTwo[1]))) * 1000;
+                                }
+                                const end = timeinmilliTwo/1000 //video in seconds
 
-                                 const current = Math.floor((timeinmilliTwo - (startTime - Date.now())) / 1000) //ms --> seconds
+                                const current = Math.floor((timeinmilliTwo - (startTime - Date.now())) / 1000) //ms --> seconds
 
-                                 const value = (current * (100 / end) / 5)
+                                const value = (current * (100 / end) / 5)
 
-                                 bar.default.full = "█";
-                                 bar.default.empty = " - ";
-                                 bar.default.start = "";
-                                 bar.default.end = "";
-                                 bar.default.text = "{bar}";
+                                bar.default.full = "█";
+                                bar.default.empty = " - ";
+                                bar.default.start = "";
+                                bar.default.end = "";
+                                bar.default.text = "{bar}";
                                     
-                                 const embed = new MessageEmbed()
-                                 .setColor('#0099ff')
-                                 .setTitle('Now Playing')
-                                 .setURL(`${server_queue.songs[0].url}`)
-                                 .setDescription(`${server_queue.songs[0].title}\n${toReadableTime(current)} - [${bar.progress(20, value)}] - ${toReadableTime(end)}`);
-                                 
-                                 interaction.channel.send({embeds: [embed]});
+                                const embed = new MessageEmbed()
+                                .setColor('#0099ff')
+                                .setTitle('Now Playing')
+                                .setURL(`${server_queue.songs[0].url}`)
+                                .setDescription(`${server_queue.songs[0].title}\n${toReadableTime(current)} - [${bar.progress(20, value)}] - ${toReadableTime(end)}`);
+                                
+                                interaction.channel.send({embeds: [embed]});
+                                }
                                 break;
                             case 'played':
                             case 'plays':
@@ -168,7 +170,7 @@ module.exports = {
                                             queue.set(interaction.guild.id, queue_constructor);
                                             try {
                                                 queue_constructor.connection = connection;
-                                                video_player(interaction.guild, queue_constructor.songs[0]);
+                                                video_player(interaction.guild, queue_constructor.songs[0], interaction);
                                                 
                                             } catch (err) {
                                                 queue.delete(interaction.guild.id);
@@ -250,7 +252,7 @@ module.exports = {
                             case 'skip':
                                 try {
                                     server_queue.songs.shift();
-                                    video_player(interaction.guild, server_queue.songs[0]);
+                                    video_player(interaction.guild, server_queue.songs[0], interaction);
                                     interaction.channel.send("⏩ Skipped the song.");
                                 } catch (err){
                                     interaction.channel.send(`There was an error doing this.`);
@@ -363,17 +365,23 @@ module.exports = {
                                 break;
                             case 'undo':
                             case 'remove':
-                                let e = server_queue.songs[server_queue.songs.length - 1];
-                                if (server_queue.songs.length > 1)
-                                   {server_queue.songs.pop();}
-                                interaction.channel.send(`❌ Removed [${e.title}] from the queue.`)
+                                if(!server_queue){
+                                    return interaction.channel.send("No songs in the queue");
+                                } else {
+                                    let e = server_queue.songs[server_queue.songs.length - 1];
+                                    if (server_queue.songs.length > 1)
+                                    {
+                                        server_queue.songs.pop();
+                                    }
+                                    interaction.channel.send(`❌ Removed [${e.title}] from the queue.`)
+                                }
                                 break;
                             default:
                                 break;
                         }
                     }
                 });
-              });
+            });
         }
     }
 
@@ -381,17 +389,17 @@ module.exports = {
 
 class VoiceParser {
     constructor(possible) {
-      this.possible = possible.map((item) => item.trim().toLowerCase());
-      return this;
+    this.possible = possible.map((item) => item.trim().toLowerCase());
+    return this;
     }
-  
+
     parse(string) {
-      let output = string.repeat(1);
-      string = string.replace("/\./g", "");
-      let check = string.toLowerCase().split(" ");
-      let checked = false;
-      for(let i = 0; i < check.length; i++){
-          if(check[i] == "groovy"){
+    let output = string.repeat(1);
+    string = string.replace("/\./g", "");
+    let check = string.toLowerCase().split(" ");
+    let checked = false;
+    for(let i = 0; i < check.length; i++){
+        if(check[i] == "groovy"){
             checked = true;
             string = string.toLowerCase().replace("groovy", "").trim();
             if (string.includes(" ")) string = string.split(" ")[0];
@@ -399,7 +407,7 @@ class VoiceParser {
             if (!this.possible.includes(string)) return false; 
             output = output.replace(/\./g, "").toLowerCase().replace("groovy", "").trim();
             break;
-          } else if (check[i] == "ruby"){
+        } else if (check[i] == "ruby"){
             checked = true;
             string = string.toLowerCase().replace("ruby", "").trim();
             if (string.includes(" ")) string = string.split(" ")[0];
@@ -407,7 +415,7 @@ class VoiceParser {
             if (!this.possible.includes(string)) return false; 
             output = output.replace(/\./g, "").toLowerCase().replace("ruby", "").trim();
             break;
-          } else if (check[i] == "movie"){
+        } else if (check[i] == "movie"){
             checked = true;
             string = string.toLowerCase().replace("movie", "").trim();
             if (string.includes(" ")) string = string.split(" ")[0];
@@ -415,7 +423,7 @@ class VoiceParser {
             if (!this.possible.includes(string)) return false; 
             output = output.replace(/\./g, "").toLowerCase().replace("movie", "").trim();
             break;
-          } else if (check[i] == "music"){
+        } else if (check[i] == "music"){
             checked = true;
             string = string.toLowerCase().replace("music", "").trim();
             if (string.includes(" ")) string = string.split(" ")[0];
@@ -423,7 +431,7 @@ class VoiceParser {
             if (!this.possible.includes(string)) return false; 
             output = output.replace(/\./g, "").toLowerCase().replace("music", "").trim();
             break;
-          } else if (check[i] == "review"){
+        } else if (check[i] == "review"){
             checked = true;
             string = string.toLowerCase().replace("review", "").trim();
             if (string.includes(" ")) string = string.split(" ")[0];
@@ -431,15 +439,15 @@ class VoiceParser {
             if (!this.possible.includes(string)) return false; 
             output = output.replace(/\./g, "").toLowerCase().replace("review", "").trim();
             break;
-          }
-      }
-      if(!checked){
-          return false;
-      }
-      return output;
+        }
     }
-  }
-  function hhmmss(time){
+    if(!checked){
+        return false;
+    }
+    return output;
+    }
+}
+function hhmmss(time){
     if(/^\d{1,}:\d{2}:\d{2}$/.test(time)){
         return true;
     }
