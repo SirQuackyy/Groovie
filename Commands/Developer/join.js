@@ -282,8 +282,8 @@ module.exports = {
                                     break;
                                 }else{
                                     let curId = server_queue.songs.length;
-                                    while (0 !== curId) {
-                                        let randId = Math.floor(Math.random() * curId);
+                                    while (1 !== curId) {
+                                        let randId = Math.floor(Math.random() * (curId - 1) + 1);
                                         curId -= 1;
                                         let tmp = server_queue.songs[curId];
                                         server_queue.songs[curId] = server_queue.songs[randId];
