@@ -85,11 +85,16 @@ module.exports = {
                     if (!data.transcript.text) return;
                     let text = data.transcript.text;
                     let user = data.user;
-                    voiceParser = new VoiceParser(["queue", "cue", "q", "que", "play", "played", "pause", "paws", "paused", "resume", "resumed", "skip", "skipped", "shuffle", "shuffled", "leave", "disconnect", "dc", "stop", "lyrics", "lyric","undo","remove"]);
+                    voiceParser = new VoiceParser(["current", "now playing", "playing", "queue", "cue", "q", "que", "play", "played", "pause", "paws", "paused", "resume", "resumed", "skip", "skipped", "shuffle", "shuffled", "leave", "disconnect", "dc", "stop", "lyrics", "lyric","undo","remove"]);
                     let parsed = voiceParser.parse(text);
                     console.log(parsed);
                     if(parsed){
                         switch (parsed.toString().split(" ")[0]) {
+                            case 'current':
+                            case 'now playing':
+                            case 'playing':
+                                //HERE
+                                break;
                             case 'played':
                             case 'play':
                                 let song = {};
