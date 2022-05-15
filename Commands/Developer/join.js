@@ -18,7 +18,7 @@ var startTime = 0;
 
 const video_player = async (guild, song, interaction) => {
     server_queue = queue.get(guild.id);
-    
+
     //If no song is left in the server queue. Leave the voice channel and delete the key and value pair from the global queue.
     if (!song) {
         queue.delete(guild.id);
@@ -363,8 +363,12 @@ module.exports = {
                                     if (server_queue.songs.length > 1)
                                     {
                                         server_queue.songs.pop();
+                                        interaction.channel.send(`❌ Removed [${e.title}] from the queue.`)
+                                    } else {
+                                        interaction.channel.send(`❌ Removed [${e.title}] from the queue.`)
+                                        server_queue.songs.shift();
+                                        video_player(interaction.guild, server_queue.songs[0], interaction);
                                     }
-                                    interaction.channel.send(`❌ Removed [${e.title}] from the queue.`)
                                 }
                                 break;
                             default:
