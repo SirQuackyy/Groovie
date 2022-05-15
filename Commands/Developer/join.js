@@ -7,7 +7,7 @@ const play = require('play-dl')
 
 const Genius = require("genius-lyrics");
 const GClient = new Genius.Client(process.env.GENIUS_KEY);
-const { mongoConnection } = require("mongoose");
+const { mongoConnection, connection } = require("mongoose");
 
 const pagination = require('@acegoal07/discordjs-pagination');
 const { MessageButton } = require("discord.js");
@@ -22,7 +22,11 @@ const video_player = async (guild, song, interaction) => {
     //If no song is left in the server queue. Leave the voice channel and delete the key and value pair from the global queue.
     if (!song) {
         queue.delete(guild.id);
-        return interaction.channel.send("No more songs in the queue");
+        server_queue = null;
+        voice.getVoiceConnection(interaction.guild.id).disconnect();
+        interaction.channel.send("No more songs in the queue")
+        interaction.channel.send("👋 Leaving the voice channel.");
+        return;
     }
 
     var actualTime = song.duration.split(':');

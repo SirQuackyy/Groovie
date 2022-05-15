@@ -10,8 +10,10 @@ module.exports = {
      * @param {CommandInteraction} interaction
      */
     execute(interaction){
-        voice.getVoiceConnection(interaction.guild.id).disconnect();
-        interaction.reply({content:"leaving"});
+        if(interaction.client.voice.connections.size > 0){
+            voice.getVoiceConnection(interaction.guild.id).disconnect();
+            interaction.reply({content:"👋 Leaving the voice channel."});
+        }
     }
 
 }
