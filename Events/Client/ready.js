@@ -1,7 +1,7 @@
 const { Client } = require("discord.js")
 const mongoose = require("mongoose");
 require('dotenv').config();
-
+//It's finally over
 module.exports = {
     name: "ready",
     once: true,
