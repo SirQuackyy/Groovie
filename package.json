@@ -1,0 +1,38 @@
+{
+  "dependencies": {
+    "@acegoal07/discordjs-pagination": "^1.2.8-a",
+    "@discordjs/opus": "^0.5.3",
+    "@discordjs/rest": "^0.4.1",
+    "@discordjs/voice": "^0.9.0",
+    "@nordbot/discord-pages": "^1.0.2",
+    "@psibean/discord.js-pagination": "^4.0.5",
+    "ascii-table": "^0.0.9",
+    "discord-api-types": "^0.32.1",
+    "discord-player": "^5.2.2",
+    "discord-speech-to-text": "^1.1.5",
+    "discord.js": "^13.7.0",
+    "discord.js-embed-pagination": "^1.0.2",
+    "dotenv": "^16.0.1",
+    "events": "^3.3.0",
+    "ffmpeg-static": "^4.4.1",
+    "fs": "^0.0.1-security",
+    "genius-lyrics": "^4.3.8",
+    "glob": "^8.0.3",
+    "mongoose": "^6.3.3",
+    "opus": "^0.0.0",
+    "pagination-discord-js-13": "^1.0.3",
+    "yt-search": "^2.10.3",
+    "ytdl-core": "^4.11.0"
+  },
+  "name": "groovie",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./index.js"
+  },
+  "keywords": [],
+  "author": "BurritoDevs",
+  "license": "ISC",
+  "description": ""
+}
