@@ -10,19 +10,21 @@ const GClient = new Genius.Client(process.env.GENIUS_KEY);
 const { mongoConnection } = require("mongoose");
 
 const pagination = require('@acegoal07/discordjs-pagination');
-const { MessageActionRow } = require("discord.js");
 const { MessageButton } = require("discord.js");
 
 const player = createAudioPlayer();
 
 var startTime = 0;
 
-const firstSong = null;
-
-var pos = 0;
-
 const video_player = async (guild, song, interaction) => {
     server_queue = queue.get(guild.id);
+    
+    //If no song is left in the server queue. Leave the voice channel and delete the key and value pair from the global queue.
+    if (!song) {
+        queue.delete(guild.id);
+        return interaction.channel.send("No more songs in the queue");
+    }
+
     var actualTime = song.duration.split(':');
     var timeinmilli = 0;
     if(hhmmss(song.duration)){
@@ -32,11 +34,6 @@ const video_player = async (guild, song, interaction) => {
     }
     startTime = Date.now() + timeinmilli;
 
-    //If no song is left in the server queue. Leave the voice channel and delete the key and value pair from the global queue.
-    if (!song) {
-        queue.delete(guild.id);
-        return interaction.channel.send("No more songs in the queue");
-    }
     const stream = await play.stream(song.url);
 
     let voiceConnection = getVoiceConnection(guild.id);
@@ -45,14 +42,8 @@ const video_player = async (guild, song, interaction) => {
     const resource = createAudioResource(stream.stream, { inputType: stream.type});
     dispatcher = player.play(resource);
     player.on(AudioPlayerStatus.Idle, () => {
-        pos += 1;
         startTime = 0;
         server_queue.songs.shift();
-        if(server_queue.songs.length == 0){
-            pos = 0;
-            server_queue = null;
-            return interaction.channel.send("No more songs in queue");
-        }
         video_player(guild, server_queue.songs[0], interaction);
     }); 
     await server_queue.text_channel.send(`🎶 Now playing **${song.title}**`);
@@ -84,7 +75,7 @@ module.exports = {
                     if (!data.transcript.text) return;
                     let text = data.transcript.text;
                     let user = data.user;
-                    voiceParser = new VoiceParser(["current", "currently", "now", "now playing", "playing", "queue", "cue", "q", "que", "play", "plays", "place", "played", "pause", "paws", "paused", "resume", "resumed", "skip", "skipped", "shuffle", "shuffled", "leave", "disconnect", "dc", "stop", "lyrics", "lyric","undo","remove"]);
+                    voiceParser = new VoiceParser(["current", "currently", "now", "now playing", "playing", "queue", "cue", "q", "que", "play", "plays", "place", "played", "pause", "puzz", "paws", "paused", "resume", "resumed", "skip", "skipped", "shuffle", "shuffled", "leave", "disconnect", "dc", "stop", "lyrics", "lyric","undo","remove"]);
                     let parsed = voiceParser.parse(text);
                     if(parsed){
                         switch (parsed.toString().split(" ")[0]) {
@@ -270,6 +261,7 @@ module.exports = {
                             case 'paws':
                             case 'paused':
                             case 'pause':
+                            case 'puzz':
                                 if(!player){
                                     break;
                                 } else {
