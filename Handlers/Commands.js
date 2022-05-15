@@ -4,6 +4,9 @@ const { promisify } = require("util");
 const { glob } = require("glob");
 const PG = promisify(glob);
 const Ascii = require("ascii-table");
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
+require('dotenv').config();
 
 /**
  * @param {Client} client
@@ -44,7 +47,17 @@ module.exports = async (client) => {
     // PERMISSIONS CHECK //
 
     client.on('ready', async () => {
-        const mainGuild = await client.guilds.cache.get("805944778273325116");
-        mainGuild.commands.set(CommandsArray);
+        const rest = new REST({ version: '9' }).setToken(process.env.DISCORD_TOKEN);
+        try {
+            console.log('Started refreshing application (/) commands.');
+
+            await rest.put(
+                Routes.applicationCommands("975062411327442944"),
+                { body: CommandsArray },
+            );
+            console.log('Successfully reloaded application (/) commands.');
+        } catch (error) {
+            console.error(error);
+        }
     });
 }
