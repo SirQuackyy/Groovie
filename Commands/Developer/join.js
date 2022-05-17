@@ -1,6 +1,6 @@
 const { CommandInteraction, MessageEmbed } = require("discord.js"); 
 const Transcriber = require("discord-speech-to-text");
-const { AudioPlayerStatus, joinVoiceChannel, getVoiceConnection, createAudioPlayer, createAudioResource, NoSubscriberBehavior, VoiceConnectionStatus, entersState } = require('@discordjs/voice');
+const { AudioPlayerStatus, joinVoiceChannel, getVoiceConnection, createAudioPlayer, createAudioResource, NoSubscriberBehavior, VoiceConnectionStatus, entersState, voice } = require('@discordjs/voice');
 const events = require('events');
 const queue = new Map();
 const play = require('play-dl')
